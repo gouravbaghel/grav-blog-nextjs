@@ -5,7 +5,7 @@ env.allowLocalModels = false; // We'll download from HF on first run, then cache
 
 // Singleton pipeline to ensure we only load the model once per server process
 class PipelineSingleton {
-    static task = "feature-extraction";
+    static task: any = "feature-extraction";
     static model = "Xenova/all-MiniLM-L6-v2";
     static instance: any = null;
 
