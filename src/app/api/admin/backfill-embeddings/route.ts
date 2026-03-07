@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { generateEmbedding } from "@/lib/embeddings";
 
 export const maxDuration = 300; // Allow it to run for up to 5 minutes
 
@@ -33,6 +32,7 @@ export async function POST() {
                 const trimmedText = textToEmbed.substring(0, 8000);
 
                 console.log(`Generating embedding for post: ${post.id}`);
+                const { generateEmbedding } = await import("@/lib/embeddings");
                 const embedding = await generateEmbedding(trimmedText);
 
                 // Convert array to pgvector string format '[0.1, 0.2, ...]'

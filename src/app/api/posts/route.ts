@@ -4,7 +4,6 @@ import { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { getReadingTime } from "@/lib/utils";
 import { auth } from "@/lib/auth";
-import { generateEmbedding } from "@/lib/embeddings";
 import { hasPrismaErrorCode } from "@/lib/prisma-errors";
 
 function buildPostTagCreates(tagIds: unknown) {
@@ -113,6 +112,7 @@ export async function POST(request: NextRequest) {
         try {
             const textToEmbed = `${post.title}. ${post.excerpt || ""} ${post.content}`.trim();
             const trimmedText = textToEmbed.substring(0, 8000);
+            const { generateEmbedding } = await import("@/lib/embeddings");
             const embedding = await generateEmbedding(trimmedText);
             const embeddingStr = `[${embedding.join(",")}]`;
 

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { generateEmbedding } from "@/lib/embeddings";
 
 interface SearchPostRow {
     id: string;
@@ -28,6 +27,7 @@ export async function GET(request: NextRequest) {
         }
 
         // Generate embedding for the search query
+        const { generateEmbedding } = await import("@/lib/embeddings");
         const queryEmbedding = await generateEmbedding(query);
 
         // Convert array to pgvector string format '[0.1, 0.2, ...]'

@@ -3,7 +3,6 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { getReadingTime } from "@/lib/utils";
-import { generateEmbedding } from "@/lib/embeddings";
 import { hasPrismaErrorCode } from "@/lib/prisma-errors";
 
 function buildPostTagCreates(tagIds: unknown) {
@@ -92,6 +91,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
             try {
                 const textToEmbed = `${post.title}. ${post.excerpt || ""} ${post.content}`.trim();
                 const trimmedText = textToEmbed.substring(0, 8000);
+                const { generateEmbedding } = await import("@/lib/embeddings");
                 const embedding = await generateEmbedding(trimmedText);
                 const embeddingStr = `[${embedding.join(",")}]`;
 
