@@ -1,15 +1,21 @@
-import { pipeline, env, PipelineType } from "@xenova/transformers";
+import {
+  env,
+  pipeline,
+  type FeatureExtractionPipeline,
+} from "@xenova/transformers";
 
 // Configure transformers behavior
 env.allowLocalModels = false;
 
 // Singleton pipeline so the model loads only once
 class PipelineSingleton {
-  static task: PipelineType = "feature-extraction";
+  static task = "feature-extraction" as const;
   static model: string = "Xenova/all-MiniLM-L6-v2";
-  static instance: any = null;
+  static instance: FeatureExtractionPipeline | null = null;
 
-  static async getInstance(progress_callback?: any) {
+  static async getInstance(
+    progress_callback?: NonNullable<Parameters<typeof pipeline>[2]>["progress_callback"]
+  ) {
     if (this.instance === null) {
       this.instance = await pipeline(
         this.task,

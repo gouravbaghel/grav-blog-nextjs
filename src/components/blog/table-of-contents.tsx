@@ -1,8 +1,7 @@
 // Table of Contents component for blog posts
 "use client";
 
-import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { useEffect, useMemo, useState } from "react";
 import { List } from "lucide-react";
 
 interface TocItem {
@@ -16,14 +15,13 @@ interface TableOfContentsProps {
 }
 
 export function TableOfContents({ content }: TableOfContentsProps) {
-    const [headings, setHeadings] = useState<TocItem[]>([]);
     const [activeId, setActiveId] = useState<string>("");
 
-    useEffect(() => {
+    const headings = useMemo(() => {
         // Parse headings from markdown
         const regex = /^(#{2,4})\s+(.+)$/gm;
         const items: TocItem[] = [];
-        let match;
+        let match: RegExpExecArray | null;
 
         while ((match = regex.exec(content)) !== null) {
             const level = match[1].length;
@@ -35,7 +33,7 @@ export function TableOfContents({ content }: TableOfContentsProps) {
             items.push({ id, text, level });
         }
 
-        setHeadings(items);
+        return items;
     }, [content]);
 
     useEffect(() => {

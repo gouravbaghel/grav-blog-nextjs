@@ -1,15 +1,15 @@
-require("dotenv").config();
-const { PrismaClient } = require("@prisma/client");
-const { PrismaPg } = require("@prisma/adapter-pg");
-const { Pool } = require("pg");
-const bcrypt = require("bcryptjs");
+import "dotenv/config";
+import bcrypt from "bcryptjs";
+import { PrismaPg } from "@prisma/adapter-pg";
+import { Category, PrismaClient, Tag } from "@prisma/client";
+import { Pool } from "pg";
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
-const prisma = new PrismaClient({ adapter } as any);
+const prisma = new PrismaClient({ adapter });
 
 async function main() {
-  console.log("🌱 Seeding database...");
+  console.log("Seeding database...");
 
   // Create admin user
   const hashedPassword = await bcrypt.hash("admin123", 12);
@@ -24,7 +24,7 @@ async function main() {
       bio: "Blog administrator and content creator.",
     },
   });
-  console.log("✅ Admin user created:", admin.email);
+  console.log("Admin user created:", admin.email);
 
   // Create categories
   const categoriesData = [
@@ -36,7 +36,7 @@ async function main() {
     { name: "AI & ML", slug: "ai-ml", color: "#ec4899" },
   ];
 
-  const categories = [];
+  const categories: Category[] = [];
   for (const cat of categoriesData) {
     const created = await prisma.category.upsert({
       where: { slug: cat.slug },
@@ -45,7 +45,7 @@ async function main() {
     });
     categories.push(created);
   }
-  console.log(`✅ ${categories.length} categories created`);
+  console.log(`${categories.length} categories created`);
 
   // Create tags
   const tagsData = [
@@ -59,7 +59,7 @@ async function main() {
     { name: "Security", slug: "security" },
   ];
 
-  const tags: any[] = [];
+  const tags: Tag[] = [];
   for (const tag of tagsData) {
     const created = await prisma.tag.upsert({
       where: { slug: tag.slug },
@@ -68,7 +68,7 @@ async function main() {
     });
     tags.push(created);
   }
-  console.log(`✅ ${tags.length} tags created`);
+  console.log(`${tags.length} tags created`);
 
   // Create sample posts
   const postsData = [
@@ -324,9 +324,9 @@ Prisma makes database development type-safe, productive, and enjoyable.`,
       },
     });
   }
-  console.log(`✅ ${postsData.length} posts created`);
+  console.log(`${postsData.length} posts created`);
 
-  console.log("🎉 Seeding complete!");
+  console.log("Seeding complete!");
 }
 
 main()

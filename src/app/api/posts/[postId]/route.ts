@@ -4,6 +4,7 @@ import prisma from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { getReadingTime } from "@/lib/utils";
 import { generateEmbedding } from "@/lib/embeddings";
+import { hasPrismaErrorCode } from "@/lib/prisma-errors";
 
 interface RouteParams {
     params: Promise<{ postId: string }>;
@@ -89,8 +90,8 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         }
 
         return NextResponse.json(post);
-    } catch (error: any) {
-        if (error?.code === "P2002") {
+    } catch (error) {
+        if (hasPrismaErrorCode(error, "P2002")) {
             return NextResponse.json({ error: "Slug already in use" }, { status: 409 });
         }
         return NextResponse.json({ error: "Failed to update post" }, { status: 500 });

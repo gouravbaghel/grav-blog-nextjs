@@ -1,7 +1,7 @@
 // Admin categories management
 "use client";
 
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Plus, Trash2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,13 +22,18 @@ export default function AdminCategoriesPage() {
     const [loading, setLoading] = useState(true);
     const [form, setForm] = useState({ name: "", slug: "", color: "#6366f1" });
 
-    useEffect(() => { fetchCategories(); }, []);
-
-    const fetchCategories = async () => {
+    const fetchCategories = useCallback(async () => {
         const data = await fetch("/api/categories").then((r) => r.json());
         setCategories(data);
         setLoading(false);
-    };
+    }, []);
+
+    useEffect(() => {
+        const timeoutId = window.setTimeout(() => {
+            void fetchCategories();
+        }, 0);
+        return () => window.clearTimeout(timeoutId);
+    }, [fetchCategories]);
 
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -39,14 +44,14 @@ export default function AdminCategoriesPage() {
         });
         if (res.ok) {
             setForm({ name: "", slug: "", color: "#6366f1" });
-            fetchCategories();
+            void fetchCategories();
         }
     };
 
     const handleDelete = async (id: string) => {
         if (!confirm("Delete this category?")) return;
         await fetch(`/api/categories/${id}`, { method: "DELETE" });
-        fetchCategories();
+        void fetchCategories();
     };
 
     return (

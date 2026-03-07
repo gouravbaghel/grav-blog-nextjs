@@ -8,11 +8,30 @@ import { Search, Loader2, BookOpen } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/utils";
 
+interface SearchPost {
+    id: string;
+    slug: string;
+    title: string;
+    excerpt: string | null;
+    coverImage: string | null;
+    readingTime: number | null;
+    createdAt: string;
+    author: {
+        name: string | null;
+        image: string | null;
+    };
+    category: {
+        name: string;
+        slug: string;
+        color: string | null;
+    } | null;
+}
+
 function SearchResults() {
     const searchParams = useSearchParams();
     const query = searchParams.get("q");
 
-    const [posts, setPosts] = useState<any[]>([]);
+    const [posts, setPosts] = useState<SearchPost[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
 
@@ -70,7 +89,7 @@ function SearchResults() {
         <div>
             <div className="mb-10 text-center">
                 <h1 className="text-3xl font-bold mb-3">
-                    <span className="text-muted-foreground font-normal">AI Results for:</span> "{query}"
+                    <span className="text-muted-foreground font-normal">AI Results for:</span> &quot;{query}&quot;
                 </h1>
                 <p className="text-muted-foreground">
                     {posts.length} {posts.length === 1 ? "article" : "articles"} found based on conceptual meaning.
@@ -114,7 +133,7 @@ function SearchResults() {
                 <div className="text-center py-20 border rounded-xl bg-muted/30">
                     <Search className="h-12 w-12 mx-auto text-muted-foreground/30 mb-4 animate-bounce" />
                     <h3 className="text-xl font-semibold mb-2">No matching concepts</h3>
-                    <p className="text-muted-foreground">We couldn't find any articles conceptually related to your query.</p>
+                    <p className="text-muted-foreground">We couldn&apos;t find any articles conceptually related to your query.</p>
                 </div>
             )}
         </div>

@@ -1,7 +1,7 @@
 // Comment system with threaded replies
 "use client";
 
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MessageCircle, Reply, Trash2, Send, Loader2 } from "lucide-react";
@@ -32,12 +32,7 @@ export function Comments({ postId }: CommentsProps) {
     const [replyingTo, setReplyingTo] = useState<string | null>(null);
     const [replyContent, setReplyContent] = useState("");
 
-    // Fetch comments
-    useEffect(() => {
-        fetchComments();
-    }, [postId]);
-
-    const fetchComments = async () => {
+    const fetchComments = useCallback(async () => {
         try {
             const res = await fetch(`/api/posts/${postId}/comments`);
             const data = await res.json();
@@ -47,7 +42,11 @@ export function Comments({ postId }: CommentsProps) {
         } finally {
             setLoading(false);
         }
-    };
+    }, [postId]);
+
+    useEffect(() => {
+        void fetchComments();
+    }, [fetchComments]);
 
     const handleSubmit = async (e: React.FormEvent, parentId?: string) => {
         e.preventDefault();
@@ -69,7 +68,7 @@ export function Comments({ postId }: CommentsProps) {
                 } else {
                     setNewComment("");
                 }
-                fetchComments();
+                void fetchComments();
             }
         } catch (err) {
             console.error("Failed to post comment:", err);
@@ -83,7 +82,7 @@ export function Comments({ postId }: CommentsProps) {
             await fetch(`/api/posts/${postId}/comments/${commentId}`, {
                 method: "DELETE",
             });
-            fetchComments();
+            void fetchComments();
         } catch (err) {
             console.error("Failed to delete comment:", err);
         }

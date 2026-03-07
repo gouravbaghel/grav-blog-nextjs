@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { Calendar, Clock, Eye, ArrowLeft } from "lucide-react";
+import { Prisma } from "@prisma/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -20,6 +21,15 @@ import type { Metadata } from "next";
 interface PostPageProps {
     params: Promise<{ slug: string }>;
 }
+
+const postInclude = {
+    author: { select: { id: true, name: true, image: true, bio: true } },
+    category: { select: { name: true, slug: true, color: true } },
+    tags: { include: { tag: true } },
+    _count: { select: { likes: true, comments: true } },
+} satisfies Prisma.PostInclude;
+
+type PostDetail = Prisma.PostGetPayload<{ include: typeof postInclude }>;
 
 // Generate metadata for SEO
 export async function generateMetadata({ params }: PostPageProps): Promise<Metadata> {
@@ -53,34 +63,33 @@ export async function generateMetadata({ params }: PostPageProps): Promise<Metad
 
 export default async function PostPage({ params }: PostPageProps) {
     const { slug } = await params;
-    let post;
+    let post: PostDetail | null = null;
     let userLiked = false;
 
     try {
         post = await prisma.post.findUnique({
             where: { slug, published: true },
-            include: {
-                author: { select: { id: true, name: true, image: true, bio: true } },
-                category: { select: { name: true, slug: true, color: true } },
-                tags: { include: { tag: true } },
-                _count: { select: { likes: true, comments: true } },
-            },
+            include: postInclude,
         });
 
-        if (!post) notFound();
-
         // Increment views
-        await prisma.post.update({ where: { id: post.id }, data: { views: { increment: 1 } } });
+        if (post) {
+            await prisma.post.update({ where: { id: post.id }, data: { views: { increment: 1 } } });
+        }
 
         // Check if user liked
         const session = await auth();
-        if (session?.user?.id) {
+        if (post && session?.user?.id) {
             const like = await prisma.like.findUnique({
                 where: { userId_postId: { userId: session.user.id, postId: post.id } },
             });
             userLiked = !!like;
         }
     } catch {
+        notFound();
+    }
+
+    if (!post) {
         notFound();
     }
 
@@ -114,7 +123,7 @@ export default async function PostPage({ params }: PostPageProps) {
                                     </Badge>
                                 </Link>
                             )}
-                            {post.tags.map(({ tag }: { tag: any }) => (
+                            {post.tags.map(({ tag }) => (
                                 <Link key={tag.slug} href={`/tags/${tag.slug}`}>
                                     <Badge variant="secondary" className="font-normal">#{tag.name}</Badge>
                                 </Link>

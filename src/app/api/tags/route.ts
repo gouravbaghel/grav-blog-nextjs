@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { auth } from "@/lib/auth";
+import { hasPrismaErrorCode } from "@/lib/prisma-errors";
 
 export async function GET() {
     try {
@@ -29,8 +30,8 @@ export async function POST(request: NextRequest) {
 
         const tag = await prisma.tag.create({ data: { name, slug } });
         return NextResponse.json(tag, { status: 201 });
-    } catch (error: any) {
-        if (error?.code === "P2002") {
+    } catch (error) {
+        if (hasPrismaErrorCode(error, "P2002")) {
             return NextResponse.json({ error: "Tag already exists" }, { status: 409 });
         }
         return NextResponse.json({ error: "Failed to create tag" }, { status: 500 });

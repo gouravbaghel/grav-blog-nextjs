@@ -11,7 +11,10 @@ export function ThemeToggle() {
     const [mounted, setMounted] = useState(false);
 
     // Avoid hydration mismatch
-    useEffect(() => setMounted(true), []);
+    useEffect(() => {
+        const frame = window.requestAnimationFrame(() => setMounted(true));
+        return () => window.cancelAnimationFrame(frame);
+    }, []);
     if (!mounted) return <Button variant="ghost" size="icon" className="w-9 h-9" />;
 
     return (

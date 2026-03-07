@@ -15,6 +15,17 @@ import Link from "next/link";
 
 interface Category { id: string; name: string }
 interface Tag { id: string; name: string; slug: string }
+interface PostResponse {
+    title: string;
+    slug: string;
+    excerpt: string | null;
+    content: string;
+    coverImage: string | null;
+    categoryId: string | null;
+    published: boolean;
+    featured: boolean;
+    tags: Array<{ tag: { id: string } }>;
+}
 
 export default function EditPostPage({ params }: { params: Promise<{ postId: string }> }) {
     const { postId } = use(params);
@@ -32,16 +43,16 @@ export default function EditPostPage({ params }: { params: Promise<{ postId: str
 
     useEffect(() => {
         Promise.all([
-            fetch(`/api/posts/${postId}`).then((r) => r.json()),
-            fetch("/api/categories").then((r) => r.json()),
-            fetch("/api/tags").then((r) => r.json()),
+            fetch(`/api/posts/${postId}`).then((r) => r.json() as Promise<PostResponse>),
+            fetch("/api/categories").then((r) => r.json() as Promise<Category[]>),
+            fetch("/api/tags").then((r) => r.json() as Promise<Tag[]>),
         ]).then(([post, cats, tags]) => {
             setForm({
                 title: post.title, slug: post.slug, excerpt: post.excerpt || "",
                 content: post.content, coverImage: post.coverImage || "",
                 categoryId: post.categoryId || "", published: post.published, featured: post.featured,
             });
-            setSelectedTags(post.tags?.map((t: any) => t.tag.id) || []);
+            setSelectedTags(post.tags.map((t) => t.tag.id));
             setCategories(cats);
             setAllTags(tags);
             setLoading(false);

@@ -1,7 +1,7 @@
 // Image upload API for Cloudinary
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { v2 as cloudinary } from "cloudinary";
+import { v2 as cloudinary, type UploadApiResponse } from "cloudinary";
 
 cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -26,13 +26,20 @@ export async function POST(request: NextRequest) {
         const bytes = await file.arrayBuffer();
         const buffer = Buffer.from(bytes);
 
-        const result = await new Promise<any>((resolve, reject) => {
+        const result = await new Promise<UploadApiResponse>((resolve, reject) => {
             cloudinary.uploader
                 .upload_stream(
                     { folder: "gravblog", resource_type: "image" },
                     (error, result) => {
-                        if (error) reject(error);
-                        else resolve(result);
+                        if (error) {
+                            reject(error);
+                            return;
+                        }
+                        if (!result) {
+                            reject(new Error("Cloudinary upload returned no result"));
+                            return;
+                        }
+                        resolve(result);
                     }
                 )
                 .end(buffer);

@@ -1,9 +1,11 @@
 // Posts API - GET (list with pagination, search, filtering)
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { getReadingTime } from "@/lib/utils";
 import { auth } from "@/lib/auth";
 import { generateEmbedding } from "@/lib/embeddings";
+import { hasPrismaErrorCode } from "@/lib/prisma-errors";
 
 export async function GET(request: NextRequest) {
     try {
@@ -14,7 +16,13 @@ export async function GET(request: NextRequest) {
         const category = searchParams.get("category") || "";
         const tag = searchParams.get("tag") || "";
 
-        const where: Record<string, unknown> = { published: true };
+        const where: Prisma.PostWhereInput = { published: true };
+        const include = {
+            author: { select: { name: true, image: true } },
+            category: { select: { name: true, slug: true, color: true } },
+            tags: { include: { tag: true } },
+            _count: { select: { likes: true, comments: true } },
+        } satisfies Prisma.PostInclude;
 
         if (search) {
             where.OR = [
@@ -27,25 +35,20 @@ export async function GET(request: NextRequest) {
 
         const [posts, total] = await Promise.all([
             prisma.post.findMany({
-                where: where as any,
-                include: {
-                    author: { select: { name: true, image: true } },
-                    category: { select: { name: true, slug: true, color: true } },
-                    tags: { include: { tag: true } },
-                    _count: { select: { likes: true, comments: true } },
-                },
+                where,
+                include,
                 orderBy: { createdAt: "desc" },
                 skip: (page - 1) * limit,
                 take: limit,
             }),
-            prisma.post.count({ where: where as any }),
+            prisma.post.count({ where }),
         ]);
 
         return NextResponse.json({
             posts,
             pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
         });
-    } catch (error) {
+    } catch {
         return NextResponse.json({ error: "Failed to fetch posts" }, { status: 500 });
     }
 }
@@ -107,8 +110,8 @@ export async function POST(request: NextRequest) {
         }
 
         return NextResponse.json(post, { status: 201 });
-    } catch (error: any) {
-        if (error?.code === "P2002") {
+    } catch (error) {
+        if (hasPrismaErrorCode(error, "P2002")) {
             return NextResponse.json({ error: "A post with this slug already exists" }, { status: 409 });
         }
         return NextResponse.json({ error: "Failed to create post" }, { status: 500 });

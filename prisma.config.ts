@@ -1,8 +1,8 @@
 // Prisma configuration for Prisma 7
 import "dotenv/config";
-import { defineConfig } from "prisma/config";
+import { defineConfig, type PrismaConfig } from "prisma/config";
 
-export default defineConfig({
+const config = {
   schema: "prisma/schema.prisma",
   datasource: {
     url: process.env.DATABASE_URL!,
@@ -10,4 +10,6 @@ export default defineConfig({
   migrations: {
     seed: "npx tsx prisma/seed.ts",
   },
-} as any);
+} satisfies PrismaConfig;
+
+export default defineConfig(config);

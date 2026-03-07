@@ -2,6 +2,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { BookOpen, Search } from "lucide-react";
+import { Prisma } from "@prisma/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Pagination } from "@/components/pagination";
@@ -15,6 +16,14 @@ export const metadata: Metadata = {
 };
 
 const POSTS_PER_PAGE = 9;
+const postListInclude = {
+    author: { select: { name: true, image: true } },
+    category: { select: { name: true, slug: true, color: true } },
+    tags: { include: { tag: true } },
+    _count: { select: { likes: true, comments: true } },
+} satisfies Prisma.PostInclude;
+
+type BlogPost = Prisma.PostGetPayload<{ include: typeof postListInclude }>;
 
 interface BlogPageProps {
     searchParams: Promise<{ page?: string; category?: string; tag?: string; q?: string; featured?: string }>;
@@ -29,7 +38,7 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
     const featured = params.featured === "true";
 
     // Build filter conditions
-    const where: Record<string, unknown> = { published: true };
+    const where: Prisma.PostWhereInput = { published: true };
     if (category) where.category = { slug: category };
     if (tag) where.tags = { some: { tag: { slug: tag } } };
     if (featured) where.featured = true;
@@ -41,32 +50,20 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
         ];
     }
 
-    let posts: Array<{
-        id: string; title: string; slug: string; excerpt: string | null;
-        coverImage: string | null; readingTime: number | null; createdAt: Date;
-        author: { name: string | null; image: string | null };
-        category: { name: string; slug: string; color: string | null } | null;
-        tags: { tag: { name: string; slug: string } }[];
-        _count: { likes: number; comments: number };
-    }> = [];
+    let posts: BlogPost[] = [];
     let totalPosts = 0;
     let categories: Array<{ id: string; name: string; slug: string; color: string | null; _count: { posts: number } }> = [];
 
     try {
         [posts, totalPosts, categories] = await Promise.all([
             prisma.post.findMany({
-                where: where as any,
-                include: {
-                    author: { select: { name: true, image: true } },
-                    category: { select: { name: true, slug: true, color: true } },
-                    tags: { include: { tag: true } },
-                    _count: { select: { likes: true, comments: true } },
-                },
+                where,
+                include: postListInclude,
                 orderBy: { createdAt: "desc" },
                 skip: (page - 1) * POSTS_PER_PAGE,
                 take: POSTS_PER_PAGE,
-            }) as any,
-            prisma.post.count({ where: where as any }),
+            }),
+            prisma.post.count({ where }),
             prisma.category.findMany({
                 include: { _count: { select: { posts: true } } },
                 orderBy: { name: "asc" },

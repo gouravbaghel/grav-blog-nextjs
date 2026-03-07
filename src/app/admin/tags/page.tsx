@@ -1,7 +1,7 @@
 // Admin tags management
 "use client";
 
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Plus, Trash2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,13 +21,18 @@ export default function AdminTagsPage() {
     const [loading, setLoading] = useState(true);
     const [form, setForm] = useState({ name: "", slug: "" });
 
-    useEffect(() => { fetchTags(); }, []);
-
-    const fetchTags = async () => {
+    const fetchTags = useCallback(async () => {
         const data = await fetch("/api/tags").then((r) => r.json());
         setTags(data);
         setLoading(false);
-    };
+    }, []);
+
+    useEffect(() => {
+        const timeoutId = window.setTimeout(() => {
+            void fetchTags();
+        }, 0);
+        return () => window.clearTimeout(timeoutId);
+    }, [fetchTags]);
 
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -38,14 +43,14 @@ export default function AdminTagsPage() {
         });
         if (res.ok) {
             setForm({ name: "", slug: "" });
-            fetchTags();
+            void fetchTags();
         }
     };
 
     const handleDelete = async (id: string) => {
         if (!confirm("Delete this tag?")) return;
         await fetch(`/api/tags/${id}`, { method: "DELETE" });
-        fetchTags();
+        void fetchTags();
     };
 
     return (

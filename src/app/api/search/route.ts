@@ -2,6 +2,22 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { generateEmbedding } from "@/lib/embeddings";
 
+interface SearchPostRow {
+    id: string;
+    title: string;
+    slug: string;
+    excerpt: string | null;
+    coverImage: string | null;
+    readingTime: number | null;
+    createdAt: Date;
+    views: number;
+    authorName: string | null;
+    authorImage: string | null;
+    categoryName: string | null;
+    categorySlug: string | null;
+    categoryColor: string | null;
+}
+
 export async function GET(request: NextRequest) {
     try {
         const searchParams = request.nextUrl.searchParams;
@@ -21,7 +37,7 @@ export async function GET(request: NextRequest) {
         // <-> is the L2 distance operator for pgvector
         // We order by distance ascending (closest first)
 
-        const posts = await prisma.$queryRaw`
+        const posts = await prisma.$queryRaw<SearchPostRow[]>`
             SELECT 
                 p.id, 
                 p.title, 
@@ -47,7 +63,7 @@ export async function GET(request: NextRequest) {
         // We need to parse dates back to ISO strings or let JSON.stringify handle it
         // The results come back flat from raw query, so we map them to match the expected format on the frontend
 
-        const formattedPosts = (posts as any[]).map(post => ({
+        const formattedPosts = posts.map((post) => ({
             id: post.id,
             title: post.title,
             slug: post.slug,

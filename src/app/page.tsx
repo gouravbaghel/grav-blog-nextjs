@@ -110,7 +110,7 @@ export default async function HomePage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {featuredPosts.map((post: any, i: number) => (
+              {featuredPosts.map((post, i) => (
                 <Link
                   key={post.id}
                   href={`/blog/${post.slug}`}
@@ -173,7 +173,7 @@ export default async function HomePage() {
 
           {latestPosts.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {latestPosts.map((post: any) => (
+              {latestPosts.map((post) => (
                 <Link
                   key={post.id}
                   href={`/blog/${post.slug}`}
@@ -203,7 +203,7 @@ export default async function HomePage() {
                   </div>
                   <div className="p-5">
                     <div className="flex flex-wrap gap-1.5 mb-2">
-                      {post.tags.slice(0, 2).map(({ tag }: { tag: any }) => (
+                      {post.tags.slice(0, 2).map(({ tag }) => (
                         <Badge key={tag.slug} variant="secondary" className="text-xs font-normal">
                           #{tag.name}
                         </Badge>
@@ -242,7 +242,7 @@ export default async function HomePage() {
           <section>
             <h2 className="text-2xl font-bold mb-8">Browse by Category</h2>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {categories.map((cat: any) => (
+              {categories.map((cat) => (
                 <Link
                   key={cat.id}
                   href={`/categories/${cat.slug}`}
