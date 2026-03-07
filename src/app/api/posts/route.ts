@@ -7,6 +7,21 @@ import { auth } from "@/lib/auth";
 import { generateEmbedding } from "@/lib/embeddings";
 import { hasPrismaErrorCode } from "@/lib/prisma-errors";
 
+function buildPostTagCreates(tagIds: unknown) {
+    if (!Array.isArray(tagIds)) {
+        return undefined;
+    }
+
+    const uniqueTagIds = [...new Set(tagIds.filter((tagId): tagId is string => typeof tagId === "string" && tagId.trim().length > 0))];
+    if (uniqueTagIds.length === 0) {
+        return undefined;
+    }
+
+    return uniqueTagIds.map((tagId) => ({
+        tag: { connect: { id: tagId } },
+    }));
+}
+
 export async function GET(request: NextRequest) {
     try {
         const { searchParams } = new URL(request.url);
@@ -63,6 +78,7 @@ export async function POST(request: NextRequest) {
 
         const body = await request.json();
         const { title, slug, content, excerpt, coverImage, categoryId, tagIds, published, featured } = body;
+        const tagCreates = buildPostTagCreates(tagIds);
 
         if (!title || !slug || !content) {
             return NextResponse.json({ error: "Title, slug, and content are required" }, { status: 400 });
@@ -82,8 +98,8 @@ export async function POST(request: NextRequest) {
                 featured: featured ?? false,
                 authorId: session.user.id,
                 categoryId: categoryId || null,
-                tags: tagIds?.length
-                    ? { create: tagIds.map((tagId: string) => ({ tagId })) }
+                tags: tagCreates
+                    ? { create: tagCreates }
                     : undefined,
             },
             include: {
@@ -111,6 +127,7 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json(post, { status: 201 });
     } catch (error) {
+        console.error("Failed to create post:", error);
         if (hasPrismaErrorCode(error, "P2002")) {
             return NextResponse.json({ error: "A post with this slug already exists" }, { status: 409 });
         }

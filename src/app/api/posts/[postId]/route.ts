@@ -6,6 +6,21 @@ import { getReadingTime } from "@/lib/utils";
 import { generateEmbedding } from "@/lib/embeddings";
 import { hasPrismaErrorCode } from "@/lib/prisma-errors";
 
+function buildPostTagCreates(tagIds: unknown) {
+    if (!Array.isArray(tagIds)) {
+        return undefined;
+    }
+
+    const uniqueTagIds = [...new Set(tagIds.filter((tagId): tagId is string => typeof tagId === "string" && tagId.trim().length > 0))];
+    if (uniqueTagIds.length === 0) {
+        return undefined;
+    }
+
+    return uniqueTagIds.map((tagId) => ({
+        tag: { connect: { id: tagId } },
+    }));
+}
+
 interface RouteParams {
     params: Promise<{ postId: string }>;
 }
@@ -40,6 +55,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         const { postId } = await params;
         const body = await request.json();
         const { title, slug, content, excerpt, coverImage, categoryId, tagIds, published, featured } = body;
+        const tagCreates = buildPostTagCreates(tagIds);
 
         const readingTime = content ? getReadingTime(content) : undefined;
 
@@ -60,8 +76,8 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
                 ...(published !== undefined && { published }),
                 ...(featured !== undefined && { featured }),
                 ...(categoryId !== undefined && { categoryId: categoryId || null }),
-                ...(tagIds && {
-                    tags: { create: tagIds.map((tagId: string) => ({ tagId })) },
+                ...(tagCreates && {
+                    tags: { create: tagCreates },
                 }),
             },
             include: {
@@ -91,6 +107,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
         return NextResponse.json(post);
     } catch (error) {
+        console.error("Failed to update post:", error);
         if (hasPrismaErrorCode(error, "P2002")) {
             return NextResponse.json({ error: "Slug already in use" }, { status: 409 });
         }
